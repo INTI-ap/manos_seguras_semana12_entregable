@@ -61,13 +61,13 @@ void main() {
     });
 
     test('un estado distinto NO es igual', () {
-      const EstadoCaptura a = EstadoCaptura(siguienteNumero: 1);
-      const EstadoCaptura b = EstadoCaptura(siguienteNumero: 2);
+      final EstadoCaptura a = EstadoCaptura(siguienteNumero: 1);
+      final EstadoCaptura b = EstadoCaptura(siguienteNumero: 2);
       expect(a, isNot(equals(b)));
     });
 
     test('calcula cumplidas y porcentaje', () {
-      const EstadoCaptura estado = EstadoCaptura(
+      final EstadoCaptura estado = EstadoCaptura(
         oportunidades: <OportunidadRegistro>[
           OportunidadRegistro(
             auditoriaId: '',
@@ -89,15 +89,14 @@ void main() {
     });
 
     test('sin oportunidades el porcentaje es 0 y no hay datos', () {
-      const EstadoCaptura estado = EstadoCaptura();
+      final EstadoCaptura estado = EstadoCaptura();
       expect(estado.porcentaje, 0);
       expect(estado.hayDatos, isFalse);
     });
   });
 
   group('Captura (Notifier)', () {
-    test('agregar() añade la oportunidad con el número correlativo',
-        () async {
+    test('agregar() añade la oportunidad con el número correlativo', () async {
       final ProviderContainer c = contenedor();
       final Captura notifier = c.read(capturaProvider.notifier);
 
@@ -111,17 +110,21 @@ void main() {
       expect(estado.oportunidades.last.numero, 2);
     });
 
-    test('seleccionarAccion() cambia la acción de la próxima oportunidad',
-        () async {
-      final ProviderContainer c = contenedor();
-      final Captura notifier = c.read(capturaProvider.notifier);
+    test(
+      'seleccionarAccion() cambia la acción de la próxima oportunidad',
+      () async {
+        final ProviderContainer c = contenedor();
+        final Captura notifier = c.read(capturaProvider.notifier);
 
-      notifier.seleccionarAccion(Accion.omision);
-      notifier.agregar();
+        notifier.seleccionarAccion(Accion.omision);
+        notifier.agregar();
 
-      expect(c.read(capturaProvider).oportunidades.single.accion,
-          Accion.omision);
-    });
+        expect(
+          c.read(capturaProvider).oportunidades.single.accion,
+          Accion.omision,
+        );
+      },
+    );
 
     test('quitar() elimina por número sin renumerar el resto', () {
       final ProviderContainer c = contenedor();
@@ -140,30 +143,33 @@ void main() {
       expect(numeros, <int>[1, 3]);
     });
 
-    test('build() recupera el último establecimiento de las preferencias',
-        () async {
-      preferencias = PreferenciasEnMemoria(
-        iniciales: <String, String>{
-          Captura.claveUltimoEstablecimiento: '00006405',
-        },
-      );
-      final ProviderContainer c = contenedor();
+    test(
+      'build() recupera el último establecimiento de las preferencias',
+      () async {
+        preferencias = PreferenciasEnMemoria(
+          iniciales: <String, String>{
+            Captura.claveUltimoEstablecimiento: '00006405',
+          },
+        );
+        final ProviderContainer c = contenedor();
 
-      // La lectura es asíncrona y arranca dentro de build(): hay que dejar
-      // correr el microtask antes de comprobar.
-      c.read(capturaProvider);
-      await Future<void>.delayed(Duration.zero);
+        // La lectura es asíncrona y arranca dentro de build(): hay que dejar
+        // correr el microtask antes de comprobar.
+        c.read(capturaProvider);
+        await Future<void>.delayed(Duration.zero);
 
-      final EstadoCaptura estado = c.read(capturaProvider);
-      expect(estado.ultimoEstablecimiento, '00006405');
-      expect(estado.cargandoPreferencia, isFalse);
-    });
+        final EstadoCaptura estado = c.read(capturaProvider);
+        expect(estado.ultimoEstablecimiento, '00006405');
+        expect(estado.cargandoPreferencia, isFalse);
+      },
+    );
 
     test('guardar() sin oportunidades no llama al repositorio', () async {
       final ProviderContainer c = contenedor();
 
-      final ResultadoOperacion resultado =
-          await c.read(capturaProvider.notifier).guardar();
+      final ResultadoOperacion resultado = await c
+          .read(capturaProvider.notifier)
+          .guardar();
 
       expect(resultado, isA<OperacionSinDatos>());
       expect(auditorias.llamadasAGuardar, 0);
@@ -224,8 +230,10 @@ void main() {
 
     test('es keepAlive: sin oyentes el borrador sigue ahí', () async {
       final ProviderContainer c = contenedor();
-      final ProviderSubscription<EstadoCaptura> sub =
-          c.listen<EstadoCaptura>(capturaProvider, (_, _) {});
+      final ProviderSubscription<EstadoCaptura> sub = c.listen<EstadoCaptura>(
+        capturaProvider,
+        (_, _) {},
+      );
       c.read(capturaProvider.notifier).agregar();
       sub.close();
       await Future<void>.delayed(Duration.zero);
