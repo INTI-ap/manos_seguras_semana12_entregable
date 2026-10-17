@@ -76,6 +76,8 @@ class PantallaBienvenida extends ConsumerWidget {
                         ? 'Continuar el borrador '
                               '(${captura.oportunidades.length} oportunidades)'
                         : 'Comenzar auditoría',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 12, height: 1.1),
                   ),
                 ),
               ),

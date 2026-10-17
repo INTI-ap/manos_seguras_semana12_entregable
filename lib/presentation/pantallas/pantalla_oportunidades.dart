@@ -199,6 +199,8 @@ class PantallaOportunidades extends ConsumerWidget {
                     estado.guardando
                         ? 'Guardando en SQLite…'
                         : 'Guardar auditoría en el dispositivo',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 12, height: 1.1),
                   ),
                 ),
               ),
