@@ -1,6 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/local/daos/auditorias_dao.dart';
+import '../../data/local/daos/indicadores_dao.dart';
 import '../../data/local/daos/preferencias_dao.dart';
+import '../../data/local/manos_seguras_db.dart';
+import '../../data/local/sembrador.dart';
 import '../../data/seguro/almacen_seguro.dart';
 import '../../domain/repositorios/auditoria_repository.dart';
 import '../../domain/repositorios/indicador_repository.dart';
@@ -89,8 +93,30 @@ final Provider<PreferenciasDao> preferenciasDaoProvider =
   name: 'preferenciasDao',
 );
 
-// TODO(reto-1, 2 puntos): publique aquí el resto del grafo (`SembradorDatos`,
-// `ManosSegurasDb`, `IndicadorRepository` si su equipo decidió no usarlo) y
-// migre **una** pantalla adicional (sugerencia: `/diagnostico`, que es la más
-// fácil porque solo lee). Recuerde la regla: un provider por dependencia,
-// nunca dos providers construyendo el mismo objeto.
+/// **Reto 1 (2 puntos): publicación completa del grafo de infraestructura.**
+///
+/// Publica la instancia de la base de datos SQLite y el sembrador de datos,
+/// permitiendo su consumo reactivo o en operaciones de fondo sin saltarse
+/// la arquitectura de providers ni duplicar instanciaciones.
+final Provider<ManosSegurasDb> manosSegurasDbProvider =
+    Provider<ManosSegurasDb>(
+  (Ref ref) => getIt<ManosSegurasDb>(),
+  name: 'manosSegurasDb',
+);
+
+final Provider<SembradorDatos> sembradorDatosProvider =
+    Provider<SembradorDatos>(
+  (Ref ref) => getIt<SembradorDatos>(),
+  name: 'sembradorDatos',
+);
+
+final Provider<AuditoriasDao> auditoriasDaoProvider = Provider<AuditoriasDao>(
+  (Ref ref) => getIt<AuditoriasDao>(),
+  name: 'auditoriasDao',
+);
+
+final Provider<IndicadoresDao> indicadoresDaoProvider =
+    Provider<IndicadoresDao>(
+  (Ref ref) => getIt<IndicadoresDao>(),
+  name: 'indicadoresDao',
+);

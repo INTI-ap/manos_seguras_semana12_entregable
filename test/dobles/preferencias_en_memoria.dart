@@ -14,11 +14,20 @@ class PreferenciasEnMemoria implements PreferenciasRepository {
   /// la preferencia de tema no bloquea la aplicación si el disco falla.
   bool fallaAlGuardar = false;
 
+  /// Cuando es `true`, [leer] lanza una excepción para probar la robustez
+  /// ante fallos de lectura de preferencias (Reto 1c).
+  bool fallaAlLeer = false;
+
   /// Número de escrituras realizadas, para verificar que no se guarda de más.
   int escrituras = 0;
 
   @override
-  Future<String?> leer(String clave) async => _valores[clave];
+  Future<String?> leer(String clave) async {
+    if (fallaAlLeer) {
+      throw StateError('Fallo simulado de lectura (prueba).');
+    }
+    return _valores[clave];
+  }
 
   @override
   Future<void> guardar(String clave, String valor) async {

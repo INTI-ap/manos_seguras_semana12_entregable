@@ -112,7 +112,7 @@ final class TemaProvider extends $NotifierProvider<Tema, ThemeMode> {
   }
 }
 
-String _$temaHash() => r'd64d472bb6d132765b2899680d18a3b0b4133c24';
+String _$temaHash() => r'6a03825e4078569f5edce29f21ade64fa6c2da3a';
 
 /// **Semana 12 · temática 2.3.3 — de `ValueNotifier` a `Notifier`.**
 ///

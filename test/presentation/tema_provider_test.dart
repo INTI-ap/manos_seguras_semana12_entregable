@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:manos_seguras/presentation/providers/dependencias_providers.dart';
+import 'package:manos_seguras/presentation/providers/resultado_operacion.dart';
 import 'package:manos_seguras/presentation/providers/tema_provider.dart';
 
 import '../dobles/preferencias_en_memoria.dart';
@@ -88,20 +89,38 @@ void main() {
       expect(contenedor.read(temaProvider), ThemeMode.system);
     });
 
-    test('si el almacén falla al escribir, el modo se mantiene en memoria',
+    test(
+        'si el almacén falla al escribir, devuelve OperacionFallida y mantiene el modo en memoria',
         () async {
       final PreferenciasEnMemoria prefs = PreferenciasEnMemoria()
         ..fallaAlGuardar = true;
       final ProviderContainer contenedor = contenedorCon(prefs);
 
-      await contenedor.read(temaProvider.notifier).cambiarYGuardar(
-            ThemeMode.dark,
-          );
+      final ResultadoOperacion res =
+          await contenedor.read(temaProvider.notifier).cambiarYGuardar(
+                ThemeMode.dark,
+              );
 
-      // La preferencia no se pudo guardar, pero la sesión actual sí cambió:
-      // una preferencia nunca debe bloquear a la aplicación. Es la limitación
-      // que el Reto 1 pide documentar.
+      // Reto 1b: la preferencia no se pudo guardar en disco, pero la sesión actual
+      // sí cambió y se informa el fallo mediante ResultadoOperacion.
+      expect(res, isA<OperacionFallida>());
       expect(contenedor.read(temaProvider), ThemeMode.dark);
+    });
+
+    test('si la lectura falla, huboFalloLectura es true y degrada a system',
+        () async {
+      final PreferenciasEnMemoria prefs = PreferenciasEnMemoria()
+        ..fallaAlLeer = true;
+      final ProviderContainer contenedor = contenedorCon(prefs);
+      final Tema notifier = contenedor.read(temaProvider.notifier);
+
+      expect(notifier.huboFalloLectura, isFalse);
+      await notifier.cargarDesdeDisco();
+
+      // Reto 1c: se expone el estado de fallo para diagnóstico sin interrumpir
+      // el arranque de la app, degradando a ThemeMode.system.
+      expect(notifier.huboFalloLectura, isTrue);
+      expect(contenedor.read(temaProvider), ThemeMode.system);
     });
 
     test('alternar() pasa de claro a oscuro y vuelve', () async {
@@ -132,6 +151,23 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(contenedor.read(temaProvider), ThemeMode.dark);
+    });
+  });
+
+  group('dependencias_providers (Reto 1)', () {
+    test('providers del grafo tienen sus nombres declarados correctamente', () {
+      expect(auditoriaRepositoryProvider.name, 'auditoriaRepository');
+      expect(indicadorRepositoryProvider.name, 'indicadorRepository');
+      expect(preferenciasRepositoryProvider.name, 'preferenciasRepository');
+      expect(sesionRepositoryProvider.name, 'sesionRepository');
+      expect(almacenSeguroProvider.name, 'almacenSeguro');
+      expect(generadorTokenProvider.name, 'generadorToken');
+      expect(directorioUsuariosProvider.name, 'directorioUsuarios');
+      expect(preferenciasDaoProvider.name, 'preferenciasDao');
+      expect(manosSegurasDbProvider.name, 'manosSegurasDb');
+      expect(sembradorDatosProvider.name, 'sembradorDatos');
+      expect(auditoriasDaoProvider.name, 'auditoriasDao');
+      expect(indicadoresDaoProvider.name, 'indicadoresDao');
     });
   });
 }

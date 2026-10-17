@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'dependencias_providers.dart';
+import 'resultado_operacion.dart';
 
 part 'tema_provider.g.dart';
 
@@ -48,48 +49,57 @@ class Tema extends _$Tema {
   /// «AVOID initializing providers in a widget»). Se llama una sola vez,
   /// desde `main()`, antes de `runApp`.
   ///
+  /// **Reto 1c (1 punto):** Bandera de diagnóstico ante fallo de lectura
+  /// sin romper el arranque de la aplicación.
+  bool _huboFalloLectura = false;
+  bool get huboFalloLectura => _huboFalloLectura;
+
+  /// Lee la preferencia guardada y actualiza el estado.
+  ///
+  /// **No** se llama desde `build()`: la documentación oficial lo prohíbe
+  /// («DON'T perform side effects during the initialization of a provider» y
+  /// «AVOID initializing providers in a widget»). Se llama una sola vez,
+  /// desde `main()`, antes de `runApp`.
+  ///
   /// Si no hay nada guardado o la lectura falla, se conserva
   /// `ThemeMode.system` en lugar de propagar el error: una preferencia no
   /// debe impedir que la aplicación abra. Es la misma política que la
   /// Semana 10 y está registrada en el informe.
-  ///
-  /// TODO(reto-1c, 1 punto): la política actual **traga** el error con
-  /// `debugPrint`. Proponga y documente una política mejor (por ejemplo,
-  /// exponer un `bool huboFallo` en el estado para que `/diagnostico` lo
-  /// muestre) sin romper el arranque.
   Future<void> cargarDesdeDisco() async {
     try {
       final String? guardado =
           await ref.read(preferenciasRepositoryProvider).leer(clave);
       state = _desdeTexto(guardado);
+      _huboFalloLectura = false;
     } catch (error) {
+      _huboFalloLectura = true;
       debugPrint('No se pudo leer la preferencia de tema: $error');
     }
   }
 
   /// Persiste el modo elegido por el usuario y notifica a los consumidores.
   ///
-  /// TODO(reto-1b, 1 punto): analice qué ocurre si el guardado falla (disco
-  /// lleno, base bloqueada). Hoy el estado en memoria ya cambió y el disco
-  /// quedó desincronizado. Implemente la política que su equipo decida
-  /// —revertir el valor en memoria o mantener la preferencia solo en esta
-  /// sesión— y documéntela. Pista: note que este método puede devolver
-  /// [ResultadoOperacion] igual que los otros notifiers del proyecto.
-  Future<void> cambiarYGuardar(ThemeMode nuevo) async {
+  /// **Reto 1b (1 punto):** Ante un fallo de guardado (disco lleno, fallo I/O),
+  /// se conserva el modo en memoria para no bloquear la experiencia de usuario
+  /// en la sesión actual, pero se retorna [OperacionFallida] (de [ResultadoOperacion])
+  /// para que la interfaz o las pruebas conozcan el estado de sincronización.
+  Future<ResultadoOperacion> cambiarYGuardar(ThemeMode nuevo) async {
     state = nuevo;
     try {
       await ref
           .read(preferenciasRepositoryProvider)
           .guardar(clave, _aTexto(nuevo));
+      return const OperacionOk();
     } catch (error) {
       debugPrint('No se pudo guardar la preferencia de tema: $error');
+      return OperacionFallida('No se pudo guardar la preferencia en disco: $error');
     }
   }
 
   /// Alterna entre claro y oscuro. Se expone como método del notifier —y no
   /// como código en el widget— para que la regla «¿qué sigue después?» viva
   /// en un solo lugar y sea comprobable con una prueba.
-  Future<void> alternar() => cambiarYGuardar(
+  Future<ResultadoOperacion> alternar() => cambiarYGuardar(
         state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark,
       );
 
