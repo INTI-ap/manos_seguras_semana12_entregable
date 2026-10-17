@@ -10,41 +10,8 @@ import '../providers/resultado_operacion.dart';
 import '../widgets/app_layout.dart';
 import '../widgets/tarjetas.dart';
 
-/// Captura de oportunidades (los 5 Momentos) **y guardado en la base local**.
-///
-/// ## Qué cambia en la Semana 12 (temática 2.3.3)
-///
-/// Esta pantalla era el ejemplo canónico de `setState`: seis campos de estado
-/// (`_oportunidades`, `_siguienteNumero`, `_accionSeleccionada`, `_guardando`,
-/// `_ultimoEstablecimiento`, `_cargandoPreferencia`) y cinco llamadas a
-/// `setState` repartidas por el archivo. Hoy **no tiene estado propio**: pasa
-/// de `StatefulWidget` a `ConsumerWidget` porque todo el estado se mudó a
-/// `capturaProvider`.
-///
-/// ```
-///   ANTES (Semana 10)                          AHORA (Semana 12)
-///   ─────────────────                          ─────────────────
-///   StatefulWidget + setState                  ConsumerWidget + ref.watch
-///   final List<OportunidadRegistro> _oportunidades;   →  estado.oportunidades
-///   int _siguienteNumero = 1;                  →  estado.siguienteNumero
-///   bool _guardando = false;                   →  estado.guardando
-///   setState(() => _accionSeleccionada = a);   →  notifier.seleccionar Accion(a)
-/// ```
-///
-/// Lo que **no** cambió, y es lo importante: la pantalla sigue sin conocer
-/// drift ni `flutter_secure_storage`. Solo habla con el notifier, y el
-/// notifier solo habla con las interfaces del dominio.
-///
-/// ## Puntos didácticos del archivo
-///
-///  * `ref.watch(capturaProvider)` en `build`: la pantalla **observa** el
-///    estado y se reconstruye cuando cambia.
-///  * `ref.read(capturaProvider.notifier)` **dentro de los manejadores**
-///    (`onPressed`): la regla oficial es *watch en `build`, read en eventos*.
-///  * Después de un `await` se comprueba `context.mounted` antes de tocar el
-///    `BuildContext` (lección de la Sesión 16, ahora en su versión moderna).
-///  * El notifier devuelve un [ResultadoOperacion] y **la pantalla** decide el
-///    mensaje: el notifier no conoce `ScaffoldMessenger`.
+/// Observa el borrador compartido; las reglas viven en Captura.
+/// Los eventos usan ref.read y la pantalla solo presenta su resultado.
 class PantallaOportunidades extends ConsumerWidget {
   const PantallaOportunidades({super.key});
 
