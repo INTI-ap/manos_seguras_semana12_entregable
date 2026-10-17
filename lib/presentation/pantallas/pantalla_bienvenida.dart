@@ -67,12 +67,14 @@ class PantallaBienvenida extends ConsumerWidget {
               SizedBox(
                 height: 52,
                 child: ElevatedButton.icon(
-                  onPressed: () => context.go('/establecimiento'),
+                  onPressed: () => context.go(
+                    captura.hayDatos ? '/oportunidades' : '/establecimiento',
+                  ),
                   icon: const Icon(Icons.arrow_forward),
                   label: Text(
                     captura.hayDatos
                         ? 'Continuar el borrador '
-                            '(${captura.oportunidades.length} oportunidades)'
+                              '(${captura.oportunidades.length} oportunidades)'
                         : 'Comenzar auditoría',
                   ),
                 ),
@@ -173,7 +175,7 @@ class _TarjetaEstadoCompartido extends StatelessWidget {
             etiqueta: 'Borrador en curso',
             valor: captura.hayDatos
                 ? '${captura.oportunidades.length} oportunidades · '
-                    '${captura.porcentaje}% de cumplimiento'
+                      '${captura.porcentaje}% de cumplimiento'
                 : 'sin oportunidades capturadas',
           ),
           _Fila(
