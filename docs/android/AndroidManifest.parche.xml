@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  PARCHE DE SEGURIDAD PARA ANDROID — Semana 11 (Reto 4)
+  =====================================================
+
+  Este no es un archivo que se copie tal cual sobre el proyecto: es la
+  plantilla de lo que debe quedar dentro de
+
+      android/app/src/main/AndroidManifest.xml
+
+  después de ejecutar `flutter create .`. Se publica aparte para que el
+  estudiante vea exactamente qué atributos agregar y por qué.
+
+  ¿Por qué desactivar la copia de seguridad automática?
+  -----------------------------------------------------
+  Android copia por omisión las preferencias y los archivos de la aplicación
+  a Google Drive (atributo `android:allowBackup`, cuyo valor por omisión es
+  `true`). El propio README de flutter_secure_storage advierte la
+  consecuencia:
+
+      "By default Android backups data on Google Drive. It can cause
+       exception java.security.InvalidKeyException: Failed to unwrap key."
+
+  Es decir: la clave que descifra el token vive en el Android Keystore del
+  dispositivo original y NO se copia; los datos cifrados sí. Al restaurar en
+  otro dispositivo, la aplicación encuentra datos cifrados que ya no puede
+  descifrar.
+
+  Existen dos formas de resolverlo, y la guía pide justificar la elegida:
+
+    (a) `android:allowBackup="false"` — sencilla y suficiente para el
+        proyecto. Desde Android 12 tampoco se permite la transferencia
+        directa entre dispositivos, por lo que el token nunca sale del
+        equipo. Es la opción adoptada en este proyecto.
+    (b) Mantener la copia y excluir únicamente el archivo de preferencias
+        cifrado con `android:dataExtractionRules` (API 31+) y
+        `android:fullBackupContent` (API 30 y anteriores). Es lo correcto
+        cuando la aplicación guarda además datos que el usuario querría
+        conservar.
+
+  OWASP clasifica el problema como MASWE-0006 (Sensitive Data Not Excluded
+  From Backup) y lo cubre con el control MASVS-STORAGE-2: "The app prevents
+  leakage of sensitive data."
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- minSdkVersion 24: mínimo exigido por flutter_secure_storage 11.x -->
+    <uses-sdk android:minSdkVersion="24" />
+
+    <application
+        android:label="ManosSeguras"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher"
+
+        <!-- (a) Opción adoptada: nada de copias de seguridad en la nube. -->
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+
+        <!-- Desde Android 12 el atributo anterior no bloquea la
+             transferencia directa entre dispositivos; esta regla sí. -->
+        android:dataExtractionRules="@xml/data_extraction_rules">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme" />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+    </queries>
+</manifest>
+
+<!--
+  ARCHIVO COMPLEMENTARIO: android/app/src/main/res/xml/data_extraction_rules.xml
+  ============================================================================
+  Solo se necesita si el equipo eligió la opción (b). Con la opción (a), el
+  atributo android:dataExtractionRules apunta a este archivo, que declara que
+  no se extrae nada:
+
+  <?xml version="1.0" encoding="utf-8"?>
+  <data-extraction-rules>
+      <cloud-backup>
+          <exclude domain="sharedpref" path="." />
+          <exclude domain="file" path="." />
+      </cloud-backup>
+      <device-transfer>
+          <exclude domain="sharedpref" path="." />
+          <exclude domain="file" path="." />
+      </device-transfer>
+  </data-extraction-rules>
+-->

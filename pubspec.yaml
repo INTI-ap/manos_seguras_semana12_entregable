@@ -1,0 +1,122 @@
+name: manos_seguras
+description: >
+  ManosSeguras — Digitalización Flutter del instrumento oficial de
+  auditoría de higiene de manos (RM N.° 255-2016/MINSA), alineada al
+  ODS 3. Proyecto integrador de SIS048 - Desarrollo de Software II
+  (UAC). Versión de la Semana 12: arquitectura por capas (Semana 8),
+  principios SOLID e inyección de dependencias con get_it (Semana 9),
+  persistencia local offline-first con drift/SQLite (Semana 10),
+  seguridad de datos en reposo con flutter_secure_storage (Semana 11) y
+  gestión de estado avanzada con Riverpod y generación de código con
+  @riverpod (Semana 12).
+publish_to: "none"
+version: 1.4.0+5
+
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # --- Navegación declarativa (Semana 6 / temática 1.4.1) ---
+  go_router: ^17.5.0
+
+  # --- Consumo de servicios REST (Semana 6 / temática 1.4.2) ---
+  http: ^1.5.0
+
+  # --- Inyección de dependencias (Semana 9 / temática 2.1.6) ---
+  get_it: ^9.3.0
+
+  # --- Persistencia local (Semana 10 / temáticas 2.2.1 a 2.2.3) ---
+  # drift es la capa de acceso a SQLite con verificación de tipos en
+  # tiempo de compilación y generación de código.
+  drift: ^2.34.0
+  # Binarios de SQLite para Android/iOS (no se necesita en Linux,
+  # macOS ni Windows, que ya la traen instalada).
+  sqlite3_flutter_libs: ^0.6.0
+  # Ruta de documentos de la aplicación, para ubicar el archivo .sqlite.
+  path_provider: ^2.1.6
+  # Manipulación portable de rutas de archivo.
+  path: ^1.9.1
+
+  # --- Seguridad de datos en reposo (Semana 11 / temáticas 2.2.4 y 2.2.5) ---
+  # Guarda el token de sesión y los datos personales del observador en el
+  # almacén de credenciales del sistema operativo: Android Keystore
+  # (AES-GCM con clave envuelta en RSA-OAEP), Apple Keychain, libsecret en
+  # Linux, almacén cifrado en Windows y WebCrypto en web.
+  #
+  # ADVERTENCIAS VERIFICADAS contra la documentación oficial del paquete
+  # (versión 11.2.0, publicada el 2026-09-16). La mayoría de los tutoriales
+  # que circulan por Internet están desactualizados:
+  #   * `AndroidOptions(encryptedSharedPreferences: true)` YA NO EXISTE:
+  #     quedó obsoleto en la versión 10 y se eliminó en la 11, junto con la
+  #     biblioteca Jetpack Security (androidx.security:security-crypto), que
+  #     Google declaró obsoleta el 30 de julio de 2025.
+  #   * La opción de iOS se llama `accessibility` (tipo KeychainAccessibility),
+  #     no `keychainAccessibility`.
+  #   * Exige como mínimo Android minSdk 24, iOS 13.0 y macOS 10.14.
+  #   * En Android hay que desactivar la copia de seguridad automática
+  #     (`android:allowBackup="false"`) para no romper el descifrado.
+  flutter_secure_storage: ^11.2.0
+
+  # --- Gestión de estado avanzada (Semana 12 / temáticas 2.3.1 a 2.3.3) ---
+  # Riverpod es el framework de estado reactivo del curso desde la Semana 12.
+  # Se usa la variante CON generación de código (`@riverpod`), que es la que
+  # la documentación oficial recomienda hoy: el generador escribe el provider
+  # y su tipo, de modo que no hay que declarar el tipo a mano ni preocuparse
+  # por el auto-dispose.
+  #
+  # ADVERTENCIAS VERIFICADAS contra pub.dev el 2026-10-15 (esto es lo que
+  # cambia respecto de lo que repite casi todo el material de Internet):
+  #   * La última versión publicada es `flutter_riverpod` 3.4.3 (2026-09-03),
+  #     y su SDK mínimo es Dart ^3.12.0.
+  #   * `riverpod_annotation` va por la rama **4.x** (4.0.7) mientras que
+  #     `riverpod` va por la **3.x**: NO son la misma línea de versiones.
+  #   * `riverpod_lint` 3.1.9 exige Dart >= 3.13.0-0, superior al SDK de este
+  #     laboratorio (Dart 3.12.2). Además, `riverpod_lint` fija la versión
+  #     EXACTA de `riverpod` con la que se compila. Por eso el proyecto NO
+  #     usa 3.4.3: fija el **tren del 2026-07-28**, que es el último
+  #     combinable en Dart 3.12.2 (flutter_riverpod 3.4.2 →
+  #     riverpod_annotation 4.0.6 → riverpod_generator 4.0.8 →
+  #     riverpod_lint 3.1.8). Es un dato que hay que comprobar con
+  #     `flutter pub deps` antes de afirmar cualquier número.
+  #   * En la versión 3, `StateProvider`, `StateNotifierProvider` y
+  #     `ChangeNotifierProvider` se movieron a `flutter_riverpod/legacy.dart`
+  #     y NO se usan en este proyecto: el estado mutable va en `Notifier`.
+  #
+  # Las cuatro se fijan con versión exacta (sin `^`) a propósito: el
+  # laboratorio tiene que ser reproducible byte a byte para que la nota de
+  # "funciona en mi máquina" no exista.
+  flutter_riverpod: 3.4.3
+  riverpod_annotation: 4.0.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+  # `sqlite3` es dependencia transitiva de drift para escritorio; se declara
+  # explícitamente porque la prueba de migración lo usa para crear a mano una
+  # base con el esquema de la versión 1 (sin pasar por drift).
+  sqlite3: ^3.5.0
+
+  # --- Generación de código de drift (Semana 10) ---
+  drift_dev: ^2.34.0
+  build_runner: ^2.15.0
+
+  # --- Generación de código de Riverpod (Semana 12) ---
+  # `riverpod_generator` produce `*.g.dart` a partir de las anotaciones
+  # `@riverpod`. `riverpod_lint` avisa en el editor de los errores típicos
+  # (usar `ref.read` dentro de `build`, por ejemplo); desde la versión 3.1.6
+  # se integra con el servidor de análisis de Dart, así que ya NO hace falta
+  # `custom_lint`: se declara en `analysis_options.yaml`, no en pubspec.
+  riverpod_generator: 4.0.9
+  # riverpod_lint: 3.1.8
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/datos/

@@ -1,0 +1,51 @@
+# Integración continua del proyecto ManosSeguras — Semana 12.
+#
+# Este flujo ejecuta exactamente los mismos pasos que scripts/verificar.sh:
+# análisis estático sin tolerancia de hallazgos y la batería completa de
+# pruebas. La temática de CI/CD se formaliza en la Semana 20 (temática 3.5);
+# aquí se usa como red de seguridad para que ninguna entrega llegue al
+# docente con el código roto.
+#
+# Novedad de la Semana 12: el paso de generación de código ya no es solo el de
+# drift. `build_runner` ejecuta también `riverpod_generator`, que produce los
+# archivos *.g.dart de los providers anotados con `@riverpod`. Si alguien
+# olvida ejecutarlo, el análisis estático falla con "Target of URI doesn't
+# exist: ...g.dart", que es exactamente el diagnóstico que se busca.
+#
+# La prueba test/data/sesion_insegura_test.dart sigue corriendo aquí: es la
+# evidencia forense de la Semana 11 y no requiere emulador ni llavero.
+
+name: Flutter · Semana 12
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verificar:
+    name: Análisis y pruebas
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Instalar dependencias
+        run: flutter pub get
+
+      - name: Generar código (drift + riverpod_generator)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Análisis estático
+        run: flutter analyze --fatal-infos
+
+      - name: Pruebas
+        run: flutter test --reporter expanded
