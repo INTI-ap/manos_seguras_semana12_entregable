@@ -113,3 +113,27 @@ Dos advertencias que casi todo el material de Internet no recoge:
 Todo dato técnico de los documentos y de los comentarios del código proviene
 de una fuente consultada realmente el **15 de octubre de 2026** y registrada
 en `../fuentes/Fuentes_Verificadas_Semana12.md`, con URL y cita textual.
+
+
+## Persona 2: captura de oportunidades
+
+El borrador vive en `capturaProvider`, con `keepAlive: true`, y las pantallas lo observan con `ref.watch`. Volver al inicio o consultar el catálogo no descarta el trabajo. Esto conserva el estado dentro del mismo `ProviderContainer`; no escribe el borrador a disco ni lo restaura después de terminar el proceso.
+
+`EstadoCaptura.inicial()` es constante. El constructor para estados con datos copia la lista en una lista no modificable; `copyWith` conserva la misma protección. Esta separación evita que una lista externa modifique retroactivamente el estado. La igualdad y el hash comparan los campos de cada oportunidad, sin cambiar las entidades del dominio.
+
+La pantalla permite agregar, quitar, guardar y confirmar el descarte. Quitar no renumera ni reutiliza el correlativo. Mientras se guarda, el notifier rechaza llamadas simultáneas y cambios del borrador. Si el repositorio falla, conserva las oportunidades y la acción para reintentar. Si SQLite confirma y después falla la preferencia, devuelve éxito y vacía el borrador: repetir el guardado de una auditoría ya confirmada produciría duplicados.
+
+`test/laboratorio/comparacion_captura.dart` implementa el mismo contador de oportunidades con setState y Notifier; sus pruebas comprueban el mismo resultado visible y una regla sin widgets. `captura_temporal.dart` replica las operaciones de captura cambiando únicamente su ciclo de vida a autoDispose. Las pruebas contrastan la pérdida del borrador con la conservación del provider real al cerrar el último oyente. El laboratorio no se incluye en las rutas del APK.
+
+Validación de Persona 2: 17 pruebas nuevas (9 de regresión sin widgets, 3 de interfaz, 3 de comparación y 2 de ciclo de vida). Las pruebas originales de captura siguen verificando las reglas obligatorias. No se cambia el esquema SQLite ni la implementación de sesión y tema. Android se prepara con el endurecimiento de Semana 11 y un ID de aplicación separado para evitar reemplazar la instalación anterior.
+
+Comandos de validación:
+
+```text
+dart run build_runner build
+flutter analyze --fatal-infos --no-pub
+flutter test --no-pub --reporter compact
+flutter build apk --debug --no-pub
+```
+
+Las imágenes reales y las salidas literales de terminal se entregan fuera del repositorio. En Semana 12 las salidas de análisis y pruebas se insertan como texto en la sección 8, no como imágenes de terminal.

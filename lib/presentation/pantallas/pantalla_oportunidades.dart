@@ -10,41 +10,8 @@ import '../providers/resultado_operacion.dart';
 import '../widgets/app_layout.dart';
 import '../widgets/tarjetas.dart';
 
-/// Captura de oportunidades (los 5 Momentos) **y guardado en la base local**.
-///
-/// ## Qué cambia en la Semana 12 (temática 2.3.3)
-///
-/// Esta pantalla era el ejemplo canónico de `setState`: seis campos de estado
-/// (`_oportunidades`, `_siguienteNumero`, `_accionSeleccionada`, `_guardando`,
-/// `_ultimoEstablecimiento`, `_cargandoPreferencia`) y cinco llamadas a
-/// `setState` repartidas por el archivo. Hoy **no tiene estado propio**: pasa
-/// de `StatefulWidget` a `ConsumerWidget` porque todo el estado se mudó a
-/// `capturaProvider`.
-///
-/// ```
-///   ANTES (Semana 10)                          AHORA (Semana 12)
-///   ─────────────────                          ─────────────────
-///   StatefulWidget + setState                  ConsumerWidget + ref.watch
-///   final List<OportunidadRegistro> _oportunidades;   →  estado.oportunidades
-///   int _siguienteNumero = 1;                  →  estado.siguienteNumero
-///   bool _guardando = false;                   →  estado.guardando
-///   setState(() => _accionSeleccionada = a);   →  notifier.seleccionar Accion(a)
-/// ```
-///
-/// Lo que **no** cambió, y es lo importante: la pantalla sigue sin conocer
-/// drift ni `flutter_secure_storage`. Solo habla con el notifier, y el
-/// notifier solo habla con las interfaces del dominio.
-///
-/// ## Puntos didácticos del archivo
-///
-///  * `ref.watch(capturaProvider)` en `build`: la pantalla **observa** el
-///    estado y se reconstruye cuando cambia.
-///  * `ref.read(capturaProvider.notifier)` **dentro de los manejadores**
-///    (`onPressed`): la regla oficial es *watch en `build`, read en eventos*.
-///  * Después de un `await` se comprueba `context.mounted` antes de tocar el
-///    `BuildContext` (lección de la Sesión 16, ahora en su versión moderna).
-///  * El notifier devuelve un [ResultadoOperacion] y **la pantalla** decide el
-///    mensaje: el notifier no conoce `ScaffoldMessenger`.
+/// Observa el borrador compartido; las reglas viven en Captura.
+/// Los eventos usan ref.read y la pantalla solo presenta su resultado.
 class PantallaOportunidades extends ConsumerWidget {
   const PantallaOportunidades({super.key});
 
@@ -56,6 +23,16 @@ class PantallaOportunidades extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Oportunidades'),
         actions: <Widget>[
+          IconButton(
+            tooltip: 'Volver al inicio',
+            icon: const Icon(Icons.home_outlined),
+            onPressed: () => context.go('/'),
+          ),
+          IconButton(
+            tooltip: 'Consultar catálogo',
+            icon: const Icon(Icons.local_hospital_outlined),
+            onPressed: () => context.go('/establecimiento'),
+          ),
           IconButton(
             tooltip: 'Ver auditorías guardadas',
             onPressed: () => context.go('/auditorias'),
@@ -88,8 +65,10 @@ class PantallaOportunidades extends ConsumerWidget {
                 porcentaje: estado.porcentaje,
               ),
               const SizedBox(height: 16),
-              const TituloSeccion('Registrar una oportunidad',
-                  icono: Icons.add_task),
+              const TituloSeccion(
+                'Registrar una oportunidad',
+                icono: Icons.add_task,
+              ),
               TarjetaBase(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,13 +101,15 @@ class PantallaOportunidades extends ConsumerWidget {
                             fontSize: 12,
                             color: seleccionada ? Colors.white : null,
                           ),
-                          onSelected: (bool _) {
-                            // `read`, no `watch`: estamos en un manejador, no
-                            // en `build`.
-                            ref
-                                .read(capturaProvider.notifier)
-                                .seleccionarAccion(accion);
-                          },
+                          onSelected: estado.guardando
+                              ? null
+                              : (bool _) {
+                                  // `read`, no `watch`: estamos en un manejador, no
+                                  // en `build`.
+                                  ref
+                                      .read(capturaProvider.notifier)
+                                      .seleccionarAccion(accion);
+                                },
                         );
                       }).toList(),
                     ),
@@ -136,8 +117,10 @@ class PantallaOportunidades extends ConsumerWidget {
                     SizedBox(
                       height: 46,
                       child: ElevatedButton.icon(
-                        onPressed: () =>
-                            ref.read(capturaProvider.notifier).agregar(),
+                        onPressed: estado.guardando
+                            ? null
+                            : () =>
+                                  ref.read(capturaProvider.notifier).agregar(),
                         icon: const Icon(Icons.add),
                         label: Text(
                           'Agregar oportunidad '
@@ -181,9 +164,11 @@ class PantallaOportunidades extends ConsumerWidget {
                         child: IconButton(
                           tooltip: 'Quitar',
                           iconSize: 18,
-                          onPressed: () => ref
-                              .read(capturaProvider.notifier)
-                              .quitar(o.numero),
+                          onPressed: estado.guardando
+                              ? null
+                              : () => ref
+                                    .read(capturaProvider.notifier)
+                                    .quitar(o.numero),
                           icon: const Icon(
                             Icons.close,
                             color: AppColors.textSecondary,
@@ -214,10 +199,19 @@ class PantallaOportunidades extends ConsumerWidget {
                     estado.guardando
                         ? 'Guardando en SQLite…'
                         : 'Guardar auditoría en el dispositivo',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 12, height: 1.1),
                   ),
                 ),
               ),
               const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: !estado.hayDatos || estado.guardando
+                    ? null
+                    : () => _descartar(context, ref),
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Descartar borrador'),
+              ),
             ],
           ),
         ),
@@ -225,13 +219,38 @@ class PantallaOportunidades extends ConsumerWidget {
     );
   }
 
+  Future<void> _descartar(BuildContext context, WidgetRef ref) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (dialogo) => AlertDialog(
+        title: const Text('¿Descartar el borrador?'),
+        content: const Text(
+          'Se perderán las oportunidades que aún no guardaste.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogo, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogo, true),
+            child: const Text('Descartar'),
+          ),
+        ],
+      ),
+    );
+    if (!context.mounted || confirmar != true) return;
+    ref.read(capturaProvider.notifier).descartar();
+  }
+
   /// Guarda el borrador y **narra** el resultado.
   ///
   /// El `switch` sobre un `sealed class` obliga al compilador a exigir los
   /// tres casos: no se puede olvidar el error.
   Future<void> _guardar(BuildContext context, WidgetRef ref) async {
-    final ResultadoOperacion resultado =
-        await ref.read(capturaProvider.notifier).guardar();
+    final ResultadoOperacion resultado = await ref
+        .read(capturaProvider.notifier)
+        .guardar();
     // Tras un `await` el widget pudo haber sido retirado del árbol.
     if (!context.mounted) return;
 

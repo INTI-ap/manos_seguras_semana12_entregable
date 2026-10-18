@@ -1,11 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- La credencial no debe salir del dispositivo por backup o transferencia. -->
     <application
         android:label="ManosSeguras"
-        android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"
-        android:fullBackupContent="false"
-        android:dataExtractionRules="@xml/data_extraction_rules">
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
             android:exported="true"
